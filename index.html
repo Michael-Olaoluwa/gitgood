@@ -1,3 +1,847 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>THE LAST BREW — 最後の一杯</title>
+<meta name="description" content="A Walking Dead × anime fever dream: when the horde comes, only the beard coffee saves you.">
+<style>
+  :root{
+    --ink:#07080a;
+    --ink-2:#0d1013;
+    --ash:#c9c4b8;
+    --bone:#efe9dc;
+    --rust:#b5352a;
+    --rust-deep:#6d120f;
+    --blood:#ff2b2b;
+    --neon:#54f0c8;
+    --gold:#e8b45d;
+    --panel:#12161a;
+    --line:rgba(239,233,220,.14);
+    --display:"Impact","Haettenschweiler","Arial Narrow Bold","Franklin Gothic Bold",sans-serif;
+    --jp:"Yu Mincho","Hiragino Mincho ProN","Noto Serif JP","MS Mincho",serif;
+    --body:"Segoe UI","Helvetica Neue",Arial,sans-serif;
+    --mono:"Consolas","SFMono-Regular",Menlo,monospace;
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{
+    margin:0;
+    background:var(--ink);
+    color:var(--bone);
+    font-family:var(--body);
+    overflow-x:hidden;
+    -webkit-font-smoothing:antialiased;
+  }
+  ::selection{background:var(--rust);color:#fff}
+  a{color:inherit}
+
+  /* ---------- global atmosphere ---------- */
+  #fx{position:fixed;inset:0;width:100%;height:100%;z-index:0;pointer-events:none}
+  .grain{
+    position:fixed;inset:-50%;z-index:2;pointer-events:none;opacity:.075;
+    background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='140' height='140'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3'/><feColorMatrix type='saturate' values='0'/></filter><rect width='140' height='140' filter='url(%23n)'/></svg>");
+    animation:grain 1.1s steps(4) infinite;
+  }
+  @keyframes grain{
+    0%{transform:translate(0,0)}25%{transform:translate(-3%,2%)}
+    50%{transform:translate(2%,-3%)}75%{transform:translate(-2%,-2%)}100%{transform:translate(0,0)}
+  }
+  .vignette{
+    position:fixed;inset:0;z-index:2;pointer-events:none;
+    background:radial-gradient(ellipse at 50% 40%,transparent 45%,rgba(0,0,0,.75) 100%);
+  }
+  .hairlines{
+    position:fixed;inset:0;z-index:1;pointer-events:none;opacity:.16;
+    background:repeating-linear-gradient(90deg,transparent 0 78px,rgba(255,255,255,.05) 78px 79px);
+    mask-image:radial-gradient(circle at 50% 30%,#000,transparent 78%);
+  }
+
+  /* ---------- scroll progress ---------- */
+  .brew-meter{
+    position:fixed;top:0;left:0;right:0;height:5px;z-index:60;
+    background:linear-gradient(90deg,var(--rust-deep),var(--rust) var(--p,0%),transparent var(--p,0%));
+    box-shadow:0 0 18px rgba(181,53,42,.7);
+  }
+  .brew-meter::after{
+    content:"";position:absolute;right:0;top:0;bottom:0;width:2px;
+    background:var(--blood);opacity:.9;
+    animation:pulse 1.6s ease-in-out infinite;
+  }
+  @keyframes pulse{50%{opacity:.15}}
+
+  /* ---------- layout ---------- */
+  .wrap{position:relative;z-index:3;max-width:1180px;margin:0 auto;padding:0 26px}
+  section{position:relative}
+
+  /* ---------- nav ---------- */
+  .nav{
+    position:fixed;top:5px;left:0;right:0;z-index:50;
+    display:flex;align-items:center;justify-content:space-between;gap:16px;
+    padding:14px 26px;transition:background .4s,backdrop-filter .4s,padding .4s;
+  }
+  .nav.stuck{background:rgba(7,8,10,.86);backdrop-filter:blur(10px);padding:9px 26px;border-bottom:1px solid var(--line)}
+  .brand{display:flex;align-items:center;gap:11px;font-family:var(--display);letter-spacing:.16em;font-size:18px}
+  .brand .sigil{
+    width:34px;height:34px;display:grid;place-items:center;
+    border:1px solid var(--rust);color:var(--blood);border-radius:50%;
+    font-family:var(--jp);font-size:16px;
+    box-shadow:0 0 22px rgba(181,53,42,.45) inset,0 0 14px rgba(181,53,42,.25);
+  }
+  .brand small{display:block;font-family:var(--mono);font-size:9px;letter-spacing:.34em;color:var(--ash);opacity:.7}
+  .nav ul{display:flex;gap:26px;list-style:none;margin:0;padding:0;font-family:var(--mono);font-size:11px;letter-spacing:.22em;text-transform:uppercase}
+  .nav a{text-decoration:none;color:var(--ash);position:relative;padding-bottom:3px}
+  .nav a::after{content:"";position:absolute;left:0;bottom:0;height:1px;width:0;background:var(--blood);transition:width .3s}
+  .nav a:hover{color:var(--bone)}
+  .nav a:hover::after{width:100%}
+  @media(max-width:760px){.nav ul{display:none}}
+
+  /* ---------- hero ---------- */
+  .hero{
+    min-height:100svh;display:grid;align-items:center;
+    padding:120px 0 70px;overflow:hidden;
+  }
+  .moon{
+    position:absolute;top:8vh;right:6vw;width:min(38vw,420px);aspect-ratio:1;border-radius:50%;
+    background:radial-gradient(circle at 38% 34%,#ff5a3c,#a3160f 46%,#3a0505 78%);
+    box-shadow:0 0 90px 18px rgba(181,53,42,.35),0 0 240px 70px rgba(109,18,15,.3);
+    opacity:.85;filter:blur(.4px);
+    animation:moonbreath 9s ease-in-out infinite;
+  }
+  .moon::after{
+    content:"";position:absolute;inset:0;border-radius:50%;
+    background-image:radial-gradient(rgba(0,0,0,.45) 1.6px,transparent 1.7px);
+    background-size:13px 13px;mix-blend-mode:multiply;opacity:.5;
+  }
+  @keyframes moonbreath{50%{filter:blur(1.6px) brightness(1.12);transform:scale(1.015)}}
+  .speedlines{
+    position:absolute;inset:-15% -10%;pointer-events:none;opacity:.5;
+    background:repeating-conic-gradient(from 0deg at 68% 38%,
+      rgba(239,233,220,.16) 0deg .35deg,transparent .35deg 2.6deg);
+    mask-image:radial-gradient(circle at 68% 38%,#000 0%,rgba(0,0,0,.6) 24%,transparent 52%);
+    animation:spin 120s linear infinite;
+  }
+  @keyframes spin{to{transform:rotate(360deg)}}
+
+  .eyebrow{
+    display:inline-flex;align-items:center;gap:10px;
+    font-family:var(--mono);font-size:10px;letter-spacing:.4em;text-transform:uppercase;color:var(--neon);
+    margin:0 0 22px;
+  }
+  .eyebrow::before{content:"";width:34px;height:1px;background:var(--neon);box-shadow:0 0 10px var(--neon)}
+
+  h1.title{
+    font-family:var(--display);
+    font-size:clamp(3.6rem,12.5vw,10.5rem);
+    line-height:.82;letter-spacing:.005em;margin:0;text-transform:uppercase;
+    text-shadow:0 2px 0 #1a0505,0 0 44px rgba(181,53,42,.35);
+  }
+  h1.title .thin{display:block;font-size:.42em;letter-spacing:.34em;color:var(--ash);text-shadow:none}
+  h1.title .bleed{
+    color:transparent;-webkit-text-stroke:1.5px rgba(239,233,220,.55);
+    position:relative;display:inline-block;
+  }
+  h1.title .bleed::before{
+    content:attr(data-text);position:absolute;inset:0;color:var(--rust);
+    clip-path:inset(0 0 55% 0);transform:translate(3px,-2px);opacity:.9;
+    animation:glitchA 5.5s steps(1) infinite;
+  }
+  h1.title .bleed::after{
+    content:attr(data-text);position:absolute;inset:0;color:var(--neon);
+    clip-path:inset(58% 0 0 0);transform:translate(-3px,2px);opacity:.55;
+    animation:glitchB 7s steps(1) infinite;
+  }
+  @keyframes glitchA{0%,92%,100%{transform:translate(3px,-2px)}93%{transform:translate(-7px,1px)}95%{transform:translate(5px,0)}}
+  @keyframes glitchB{0%,90%,100%{transform:translate(-3px,2px)}91%{transform:translate(8px,-1px)}94%{transform:translate(-4px,1px)}}
+
+  .kanji{
+    position:absolute;top:14vh;left:-10px;writing-mode:vertical-rl;
+    font-family:var(--jp);font-size:clamp(2.4rem,7vw,5.4rem);
+    color:transparent;-webkit-text-stroke:1px rgba(239,233,220,.26);
+    letter-spacing:.28em;pointer-events:none;user-select:none;
+  }
+  .hero p.lede{
+    max-width:46ch;margin:30px 0 0;color:var(--ash);font-size:clamp(1rem,1.3vw,1.15rem);
+    line-height:1.75;border-left:2px solid var(--rust);padding-left:18px;
+  }
+  .hero-ctas{display:flex;flex-wrap:wrap;gap:14px;margin-top:34px}
+  .btn{
+    appearance:none;cursor:pointer;border:1px solid var(--line);
+    padding:15px 26px;background:transparent;color:var(--bone);
+    font-family:var(--mono);font-size:11px;letter-spacing:.24em;text-transform:uppercase;
+    text-decoration:none;display:inline-flex;align-items:center;gap:10px;
+    transition:transform .25s,border-color .25s,background .25s,color .25s,box-shadow .25s;
+    position:relative;overflow:hidden;
+  }
+  .btn:hover{transform:translateY(-2px);border-color:var(--rust);box-shadow:0 10px 30px -12px rgba(181,53,42,.8)}
+  .btn-primary{background:var(--rust);border-color:var(--rust);color:#fff8f4;font-weight:700}
+  .btn-primary:hover{background:var(--blood);box-shadow:0 0 40px -6px rgba(255,43,43,.6)}
+  .btn .jp{font-family:var(--jp);letter-spacing:0}
+
+  .hero-foot{
+    margin-top:64px;display:flex;flex-wrap:wrap;gap:28px;align-items:center;
+    font-family:var(--mono);font-size:10px;letter-spacing:.24em;color:var(--ash);
+    border-top:1px solid var(--line);padding-top:20px;max-width:620px;
+  }
+  .hero-foot b{color:var(--blood);font-weight:400}
+  .scroll-cue{display:inline-flex;align-items:center;gap:10px}
+  .scroll-cue i{display:block;width:1px;height:34px;background:linear-gradient(var(--blood),transparent);animation:cue 2s ease-in-out infinite}
+  @keyframes cue{50%{transform:scaleY(.45);opacity:.4}}
+
+  /* ---------- section heads ---------- */
+  .sect{padding:110px 0 40px}
+  .sect-head{display:flex;align-items:flex-end;justify-content:space-between;gap:24px;flex-wrap:wrap;margin-bottom:52px}
+  .sect-head .tag{
+    font-family:var(--mono);font-size:10px;letter-spacing:.42em;color:var(--rust);
+    text-transform:uppercase;margin:0 0 12px;display:flex;align-items:center;gap:10px;
+  }
+  .sect-head .tag span{width:9px;height:9px;background:var(--rust);display:inline-block;transform:rotate(45deg)}
+  h2{
+    font-family:var(--display);text-transform:uppercase;
+    font-size:clamp(2rem,5vw,3.5rem);line-height:.95;letter-spacing:.02em;margin:0;
+  }
+  h2 em{font-style:normal;color:var(--rust)}
+  .sect-head p{max-width:40ch;color:var(--ash);font-size:.94rem;line-height:1.8;margin:0}
+
+  /* ---------- manga panels ---------- */
+  .panels{display:grid;grid-template-columns:repeat(12,1fr);gap:18px}
+  .panel{
+    position:relative;grid-column:span 6;min-height:250px;padding:28px;
+    background:linear-gradient(160deg,#151a1f,#0b0e11 60%);
+    border:1px solid var(--line);overflow:hidden;
+    opacity:0;transform:translateY(28px) rotate(.4deg);
+    transition:transform .8s cubic-bezier(.2,.8,.2,1),opacity .8s,border-color .3s;
+  }
+  .panel.in{opacity:1;transform:none}
+  .panel.span-full{grid-column:span 12;min-height:300px}
+  .panel.span-4{grid-column:span 4}
+  @media(max-width:900px){
+    .panel,.panel.span-full,.panel.span-4{grid-column:span 12}
+  }
+  .panel::before{
+    content:"";position:absolute;inset:0;pointer-events:none;opacity:.14;
+    background-image:radial-gradient(rgba(239,233,220,.5) 1px,transparent 1.2px);
+    background-size:6px 6px;mask-image:linear-gradient(200deg,#000,transparent 65%);
+  }
+  .panel::after{
+    content:"";position:absolute;right:-40px;bottom:-40px;width:180px;height:180px;
+    background:radial-gradient(circle,rgba(181,53,42,.22),transparent 70%);
+    pointer-events:none;
+  }
+  .panel:hover{border-color:rgba(181,53,42,.6)}
+  .panel .num{
+    font-family:var(--display);font-size:4.6rem;line-height:1;
+    color:transparent;-webkit-text-stroke:1px rgba(239,233,220,.18);
+    position:absolute;top:14px;right:20px;
+  }
+  .panel .cn{
+    font-family:var(--mono);font-size:10px;letter-spacing:.3em;color:var(--neon);
+    text-transform:uppercase;display:block;margin-bottom:16px;
+  }
+  .panel .cn::after{content:"";display:block;width:26px;height:1px;background:var(--neon);margin-top:8px;opacity:.6}
+  .panel p{position:relative;margin:0;font-size:1.02rem;line-height:1.75;color:var(--bone)}
+  .panel p .hl{color:var(--gold)}
+  .panel .jp{
+    display:block;font-family:var(--jp);font-size:.82rem;color:var(--ash);
+    margin-top:18px;line-height:1.9;opacity:.8;
+  }
+  .panel.wide-inner{display:flex;align-items:center;justify-content:space-between;gap:30px}
+  .panel .stamp{
+    flex:0 0 auto;width:112px;height:112px;border-radius:50%;border:2px solid var(--rust);
+    display:grid;place-items:center;text-align:center;font-family:var(--mono);
+    font-size:9px;letter-spacing:.2em;color:var(--rust);transform:rotate(-9deg);
+    box-shadow:0 0 0 3px rgba(181,53,42,.15) inset;
+  }
+  .panel .stamp b{display:block;font-family:var(--jp);font-size:26px;letter-spacing:0;color:var(--blood)}
+  @media(max-width:620px){.panel.wide-inner{flex-direction:column;align-items:flex-start}}
+
+  /* ---------- horde section ---------- */
+  .horde-band{
+    margin-top:80px;padding:70px 0;border-block:1px solid var(--line);
+    background:
+      radial-gradient(ellipse at 50% 120%,rgba(181,53,42,.22),transparent 62%),
+      repeating-linear-gradient(90deg,rgba(239,233,220,.03) 0 1px,transparent 1px 56px);
+    position:relative;overflow:hidden;
+  }
+  .horde-band .row{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:var(--line)}
+  @media(max-width:760px){.horde-band .row{grid-template-columns:repeat(2,1fr)}}
+  .stat{background:var(--ink);padding:34px 26px;text-align:center;position:relative}
+  .stat .v{font-family:var(--display);font-size:clamp(2.2rem,4vw,3.4rem);line-height:1;color:var(--bone)}
+  .stat .v small{font-size:.4em;color:var(--rust);letter-spacing:.1em}
+  .stat .k{font-family:var(--mono);font-size:9px;letter-spacing:.28em;color:var(--ash);text-transform:uppercase;margin-top:12px}
+  .stat .bar{height:2px;background:var(--line);margin-top:18px;overflow:hidden}
+  .stat .bar i{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--rust),var(--blood));transition:width 1.6s ease}
+  .stat.in .bar i{width:var(--w,70%)}
+
+  /* ---------- brew interactive ---------- */
+  .brew-card{
+    margin-top:70px;position:relative;overflow:hidden;
+    border:1px solid rgba(181,53,42,.4);
+    background:
+      radial-gradient(circle at 84% 18%,rgba(255,43,43,.16),transparent 46%),
+      linear-gradient(150deg,#171012,#0a0b0d 60%);
+    padding:clamp(28px,5vw,58px);
+    display:grid;grid-template-columns:1.15fr .85fr;gap:40px;align-items:center;
+  }
+  @media(max-width:860px){.brew-card{grid-template-columns:1fr}}
+  .brew-card h3{
+    font-family:var(--display);font-size:clamp(1.8rem,4vw,3rem);line-height:.96;margin:0 0 18px;
+    text-transform:uppercase;
+  }
+  .brew-card h3 em{font-style:normal;color:var(--blood)}
+  .brew-card p{color:var(--ash);line-height:1.8;margin:0 0 26px;max-width:46ch}
+  .cup-wrap{display:grid;place-items:center;gap:22px}
+  .cup{
+    width:190px;height:190px;border-radius:50%;display:grid;place-items:center;position:relative;
+    border:1px solid rgba(239,233,220,.16);
+    background:radial-gradient(circle at 50% 40%,rgba(232,180,93,.14),transparent 66%);
+    cursor:pointer;user-select:none;
+  }
+  .cup::before{
+    content:"";position:absolute;inset:-12px;border-radius:50%;
+    border:1px dashed rgba(181,53,42,.4);animation:spin 24s linear infinite;
+  }
+  .cup .glyph{font-family:var(--jp);font-size:64px;color:var(--gold);text-shadow:0 0 34px rgba(232,180,93,.5);transition:transform .3s}
+  .cup:hover .glyph{transform:scale(1.08) rotate(-4deg)}
+  .cup:active{transform:scale(.97)}
+  .cup.readout{position:absolute;bottom:-46px;width:100%;text-align:center;font-family:var(--mono);font-size:10px;letter-spacing:.22em;color:var(--ash)}
+  .steam{position:absolute;width:6px;height:60px;border-radius:50%;filter:blur(6px);background:rgba(239,233,220,.35);animation:steam 3.4s ease-in-out infinite}
+  .steam.s1{left:38%;top:-18px}
+  .steam.s2{left:52%;top:-26px;animation-delay:.9s}
+  .steam.s3{left:62%;top:-12px;animation-delay:1.7s}
+  @keyframes steam{0%{opacity:0;transform:translateY(14px) scale(.7)}40%{opacity:.7}100%{opacity:0;transform:translateY(-46px) scale(1.25)}}
+  .powerbar{width:min(320px,100%);height:8px;background:#1a1d20;border:1px solid var(--line);position:relative;overflow:hidden}
+  .powerbar i{position:absolute;inset:0;width:var(--power,0%);background:linear-gradient(90deg,var(--rust),var(--blood),var(--gold));transition:width .5s cubic-bezier(.2,.8,.2,1)}
+  .powerbar-label{display:flex;justify-content:space-between;width:min(320px,100%);font-family:var(--mono);font-size:9px;letter-spacing:.24em;color:var(--ash);text-transform:uppercase}
+
+  /* flash overlay */
+  .flash{
+    position:fixed;inset:0;z-index:80;pointer-events:none;opacity:0;
+    background:radial-gradient(circle at 50% 50%,#fff 0%,var(--blood) 40%,transparent 72%);
+  }
+  .flash.on{animation:flash .55s ease-out}
+  @keyframes flash{0%{opacity:.85}100%{opacity:0}}
+
+  /* ---------- footer ---------- */
+  footer{
+    position:relative;z-index:3;margin-top:110px;padding:56px 0 46px;
+    border-top:1px solid var(--line);
+    background:linear-gradient(transparent,rgba(0,0,0,.6));
+  }
+  .foot-grid{display:flex;justify-content:space-between;gap:30px;flex-wrap:wrap;align-items:flex-end}
+  .foot-grid p{color:var(--ash);font-size:.85rem;line-height:1.8;margin:10px 0 0;max-width:44ch}
+  .foot-jp{font-family:var(--jp);font-size:clamp(2.2rem,8vw,6rem);line-height:.9;color:transparent;-webkit-text-stroke:1px rgba(239,233,220,.16);user-select:none}
+  .fine{font-family:var(--mono);font-size:9px;letter-spacing:.26em;color:var(--ash);opacity:.6;text-transform:uppercase;margin-top:36px}
+
+  /* reveal util */
+  .reveal{opacity:0;transform:translateY(26px);transition:opacity .9s,transform .9s}
+  .reveal.in{opacity:1;transform:none}
+
+  @media (prefers-reduced-motion:reduce){
+    *,*::before,*::after{animation:none!important;transition:none!important}
+    html{scroll-behavior:auto}
+    .panel,.reveal{opacity:1;transform:none}
+  }
+</style>
+</head>
+<body>
+
+<div class="brew-meter" aria-hidden="true"></div>
+<canvas id="fx" aria-hidden="true"></canvas>
+<div class="hairlines" aria-hidden="true"></div>
+<div class="grain" aria-hidden="true"></div>
+<div class="vignette" aria-hidden="true"></div>
+<div class="flash" id="flash" aria-hidden="true"></div>
+
+<header class="nav" id="nav">
+  <div class="brand">
+    <span class="sigil" aria-hidden="true">髭</span>
+    <span>THE LAST BREW<small>生存者記録 / SURVIVOR LOG</small></span>
+  </div>
+  <nav aria-label="Primary">
+    <ul>
+      <li><a href="#prologue">Prologue</a></li>
+      <li><a href="#chapters">Chapters</a></li>
+      <li><a href="#horde">The Horde</a></li>
+      <li><a href="#brew">Fuel</a></li>
+    </ul>
+  </nav>
+</header>
+
+<main>
+  <!-- ============ HERO ============ -->
+  <section class="hero" id="top">
+    <div class="moon" aria-hidden="true"></div>
+    <div class="speedlines" aria-hidden="true"></div>
+    <span class="kanji" aria-hidden="true">生存者の夜</span>
+    <div class="wrap">
+      <p class="eyebrow">Episode 01 &nbsp;/&nbsp; 嵐の夜</p>
+      <h1 class="title">
+        THE LAST<br>
+        <span class="bleed" data-text="BREW">BREW</span>
+        <span class="thin">ゾンビ・ナイト</span>
+      </h1>
+      <p class="lede">
+        A dark, stormy night in Resident Evil land. One dropped cup. One hungry shadow.
+        One survivor with a beard full of backup coffee — and a power that only kicks in
+        when the horde is already on top of him.
+      </p>
+      <div class="hero-ctas">
+        <a class="btn btn-primary" href="#prologue">Enter the night <span class="jp">夜へ</span></a>
+        <a class="btn" href="#chapters">Read the story <span class="jp">物語</span></a>
+      </div>
+      <div class="hero-foot">
+        <span>STATUS <b>● OUTBREAK</b></span>
+        <span>LOCATION <b>GUTTER 07</b></span>
+        <span class="scroll-cue"><i></i> SCROLL TO SURVIVE</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ PROLOGUE ============ -->
+  <section class="sect" id="prologue">
+    <div class="wrap">
+      <div class="sect-head reveal">
+        <div>
+          <p class="tag"><span></span>Prologue / 序章</p>
+          <h2>Don't waste<br>the <em>coffee.</em></h2>
+        </div>
+        <p>
+          The rules of the wasteland are simple: keep moving, keep quiet, and never,
+          ever drop the cup. This is a story about a man who broke rule number three.
+        </p>
+      </div>
+
+      <div class="brew-card reveal">
+        <div>
+          <h3>When the horde <em>closes in,</em><br>the coffee kicks in.</h3>
+          <p>
+            Half survival horror, half shōnen anime fever dream. The rain never stops,
+            the streets never empty, and the only thing standing between the living and
+            the dead is a very caffeinated beard.
+          </p>
+          <a class="btn" href="#horde">See the horde data <span class="jp">群れ</span></a>
+        </div>
+        <div class="cup-wrap">
+          <div class="cup" id="cup" role="button" tabindex="0" aria-label="Tap the cup to brew coffee and charge your power">
+            <span class="steam s1" aria-hidden="true"></span>
+            <span class="steam s2" aria-hidden="true"></span>
+            <span class="steam s3" aria-hidden="true"></span>
+            <span class="glyph" aria-hidden="true">珈琲</span>
+            <span class="cup.readout" id="cupReadout">TAP TO BREW</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ CHAPTERS ============ -->
+  <section class="sect" id="chapters">
+    <div class="wrap">
+      <div class="sect-head reveal">
+        <div>
+          <p class="tag"><span></span>Chapters / 章</p>
+          <h2>Six frames<br>of the <em>night.</em></h2>
+        </div>
+        <p>
+          Every great apocalypse is just a story told in panels. Here is the night,
+          frame by frame, with the original Japanese translation below each beat.
+        </p>
+      </div>
+
+      <div class="panels">
+        <article class="panel span-full">
+          <div class="wide-inner">
+            <div>
+              <span class="num" aria-hidden="true">01</span>
+              <span class="cn">Frame 01 — 嵐の夜</span>
+              <p>
+                It was a dark, stormy night in <span class="hl">Resident Evil land</span> —
+                rain hammering the asphalt, sirens long dead, the whole city breathing
+                like something wounded.
+              </p>
+              <span class="jp" lang="ja">バイオハザードの国で、暗く嵐の夜だった。</span>
+            </div>
+            <div class="stamp" aria-hidden="true"><b>嵐</b>STORM<br>WARNING</div>
+          </div>
+        </article>
+
+        <article class="panel">
+          <span class="num" aria-hidden="true">02</span>
+          <span class="cn">Frame 02 — 落とした</span>
+          <p>
+            NetworkChuck dropped his coffee cup into a gutter. He stopped.
+            He looked back.
+          </p>
+          <span class="jp" lang="ja">NetworkCHuckは溝にコーヒーカップを落とし、立ち止まって振り返った。</span>
+        </article>
+
+        <article class="panel">
+          <span class="num" aria-hidden="true">03</span>
+          <span class="cn">Frame 03 — 影</span>
+          <p>
+            Something emerged from the shadows behind him — slow, patient,
+            and already far too close.
+          </p>
+          <span class="jp" lang="ja">影からゾンビが現れた。</span>
+        </article>
+
+        <article class="panel">
+          <span class="num" aria-hidden="true">04</span>
+          <span class="cn">Frame 04 — 髭</span>
+          <p>
+            He reached into his beard and pulled out another cup of coffee.
+            Nobody asked how. Nobody ever would.
+          </p>
+          <span class="jp" lang="ja">MetworkChuckはひげの中に手を伸ばし、もう一杯のコーヒーを取り出した。</span>
+        </article>
+
+        <article class="panel">
+          <span class="num" aria-hidden="true">05</span>
+          <span class="cn">Frame 05 — 力</span>
+          <p>
+            He took a sip — and it gave him <span class="hl">zombie fighting powers</span>
+            the way the old stories promised it would.
+          </p>
+          <span class="jp" lang="ja">彼はコーヒーを一口飲むと、ゾンビと戦う力が湧いてきた。</span>
+        </article>
+
+        <article class="panel span-full">
+          <div class="wide-inner">
+            <div>
+              <span class="num" aria-hidden="true">06</span>
+              <span class="cn">Frame 06 — 混沌</span>
+              <p>
+                Just as the horde closed in, the coffee kicked in and the night
+                erupted into chaos. This is where survival becomes style.
+              </p>
+              <span class="jp" lang="ja">ちょうど群れが迫ったとき、コーヒーが効き始め、夜は混沌へと爆発した。</span>
+            </div>
+            <div class="stamp" aria-hidden="true"><b>戦</b>FIGHT<br>MODE</div>
+          </div>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ HORDE ============ -->
+  <section class="horde-band" id="horde">
+    <div class="wrap">
+      <div class="sect-head reveal" style="margin-bottom:38px">
+        <div>
+          <p class="tag"><span></span>The Horde / 群れ</p>
+          <h2>Numbers from<br>the <em>street.</em></h2>
+        </div>
+        <p>Field readings recovered from a cracked phone in the gutter. Accuracy: terrifying.</p>
+      </div>
+      <div class="row">
+        <div class="stat reveal" style="--w:96%">
+          <div class="v" data-count="96">0<small>%</small></div>
+          <div class="k">Horde proximity</div>
+          <div class="bar"><i></i></div>
+        </div>
+        <div class="stat reveal" style="--w:88%">
+          <div class="v" data-count="88">0<small>mg</small></div>
+          <div class="k">Caffeine in beard</div>
+          <div class="bar"><i></i></div>
+        </div>
+        <div class="stat reveal" style="--w:100%">
+          <div class="v" data-count="100">0<small>%</small></div>
+          <div class="k">Cups dropped</div>
+          <div class="bar"><i></i></div>
+        </div>
+        <div class="stat reveal" style="--w:73%">
+          <div class="v" data-count="73">0<small>d</small></div>
+          <div class="k">Days since sleep</div>
+          <div class="bar"><i></i></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ BREW / CTA ============ -->
+  <section class="sect" id="brew">
+    <div class="wrap">
+      <div class="sect-head reveal">
+        <div>
+          <p class="tag"><span></span>Fuel / 燃料</p>
+          <h2>Charge the <em>beard.</em></h2>
+        </div>
+        <p>
+          Tap the cup, fill the meter, and watch the horde think twice.
+          It's not a game. It's a lifestyle.
+        </p>
+      </div>
+
+      <div class="brew-card reveal">
+        <div>
+          <h3>Every survivor needs<br>a <em>ritual.</em></h3>
+          <p>
+            The night is long, the dead are many, and the cup is small.
+            Brew until the meter hits its limit, then go outside and be
+            the reason the horde turns around.
+          </p>
+          <div class="powerbar-label">
+            <span>Beard power</span>
+            <span id="powerPct">0%</span>
+          </div>
+          <div class="powerbar" role="progressbar" aria-label="Beard power" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" id="powerbar">
+            <i id="powerFill"></i>
+          </div>
+        </div>
+        <div class="cup-wrap">
+          <div class="cup" id="cup2" role="button" tabindex="0" aria-label="Tap to brew and charge beard power">
+            <span class="steam s1" aria-hidden="true"></span>
+            <span class="steam s2" aria-hidden="true"></span>
+            <span class="steam s3" aria-hidden="true"></span>
+            <span class="glyph" aria-hidden="true">珈琲</span>
+            <span class="cup.readout" id="cupReadout2">BREW ×0</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <div class="wrap">
+    <div class="foot-grid">
+      <div>
+        <div class="brand">
+          <span class="sigil" aria-hidden="true">髭</span>
+          <span>THE LAST BREW<small>生存者記録 / SURVIVOR LOG</small></span>
+        </div>
+        <p>
+          A fan-made tribute to dark nights, slow hordes, and the absurd power of
+          a good cup of coffee. Based on the story in <code>zombiestory.md</code>.
+        </p>
+      </div>
+      <div class="foot-jp" aria-hidden="true">最後の一杯</div>
+    </div>
+    <p class="fine">© No rights reserved · Stay quiet · Keep the cup</p>
+  </div>
+</footer>
+
+<script>
+(function(){
+  "use strict";
+  var reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+  /* ---------- nav ---------- */
+  var nav = document.getElementById("nav");
+  var meter = document.querySelector(".brew-meter");
+
+  function onScroll(){
+    var y = window.scrollY || document.documentElement.scrollTop || 0;
+    nav.classList.toggle("stuck", y > 40);
+    var h = document.documentElement.scrollHeight - window.innerHeight;
+    var p = h > 0 ? Math.min(100, (y / h) * 100) : 0;
+    meter.style.setProperty("--p", p.toFixed(2) + "%");
+  }
+  window.addEventListener("scroll", onScroll, {passive:true});
+  onScroll();
+
+  /* ---------- reveal ---------- */
+  var revealEls = document.querySelectorAll(".reveal, .panel");
+  if ("IntersectionObserver" in window && !reduceMotion){
+    var io = new IntersectionObserver(function(entries){
+      entries.forEach(function(e){
+        if (e.isIntersecting){
+          e.target.classList.add("in");
+          e.target.classList.add("in");
+          io.unobserve(e.target);
+        }
+      });
+    }, {threshold:.18, rootMargin:"0px 0px -40px 0px"});
+    revealEls.forEach(function(el){ io.observe(el); });
+  } else {
+    revealEls.forEach(function(el){ el.classList.add("in"); });
+  }
+
+  /* ---------- counters ---------- */
+  var stats = document.querySelectorAll(".stat .v[data-count]");
+  function runCounter(el){
+    var target = parseInt(el.getAttribute("data-count"), 10) || 0;
+    var suffix = el.querySelector("small");
+    var unit = suffix ? suffix.outerHTML : "";
+    var start = null;
+    if (reduceMotion){ el.innerHTML = target + unit; return; }
+    function step(ts){
+      if (!start) start = ts;
+      var t = Math.min(1, (ts - start) / 1400);
+      var eased = 1 - Math.pow(1 - t, 3);
+      el.innerHTML = Math.round(target * eased) + unit;
+      if (t < 1) requestAnimationFrame(step);
+    }
+    requestAnimationFrame(step);
+  }
+  if ("IntersectionObserver" in window){
+    var io2 = new IntersectionObserver(function(entries){
+      entries.forEach(function(e){
+        if (e.isIntersecting){
+          runCounter(e.target);
+          io2.unobserve(e.target);
+        }
+      });
+    }, {threshold:.6});
+    stats.forEach(function(s){ io2.observe(s); });
+  } else {
+    stats.forEach(runCounter);
+  }
+
+  /* ---------- brew interactions ---------- */
+  var power = 0, brews = 0;
+  var fill = document.getElementById("powerFill");
+  var bar = document.getElementById("powerbar");
+  var pct = document.getElementById("powerPct");
+  var flash = document.getElementById("flash");
+  var readouts = [
+    document.getElementById("cupReadout"),
+    document.getElementById("cupReadout2")
+  ];
+  var cups = [document.getElementById("cup"), document.getElementById("cup2")];
+
+  function updatePower(){
+    fill.style.width = power + "%";
+    pct.textContent = power + "%";
+    bar.setAttribute("aria-valuenow", String(power));
+    readouts.forEach(function(r){
+      if (r && r.id === "cupReadout") r.textContent = power >= 100 ? "LIMIT BREAK" : (power ? power + "% CHARGED" : "TAP TO BREW");
+      if (r && r.id === "cupReadout2") r.textContent = "BREW ×" + brews;
+    });
+  }
+
+  function brew(){
+    brews++;
+    power = Math.min(100, power + 17);
+    updatePower();
+    if (power >= 100){
+      flash.classList.remove("on");
+      void flash.offsetWidth;
+      flash.classList.add("on");
+      power = 0;
+      setTimeout(function(){ updatePower(); }, 600);
+    }
+  }
+
+  cups.forEach(function(c){
+    if (!c) return;
+    c.addEventListener("click", brew);
+    c.addEventListener("keydown", function(e){
+      if (e.key === "Enter" || e.key === " "){ e.preventDefault(); brew(); }
+    });
+  });
+  updatePower();
+
+  /* ---------- canvas: rain, embers, fog ---------- */
+  var canvas = document.getElementById("fx");
+  if (!canvas) return;
+  var ctx = canvas.getContext("2d");
+  var W = 0, H = 0, dpr = Math.min(window.devicePixelRatio || 1, 2);
+  var drops = [], embers = [], motes = [];
+
+  function resize(){
+    W = window.innerWidth; H = window.innerHeight;
+    canvas.width = Math.floor(W * dpr);
+    canvas.height = Math.floor(H * dpr);
+    canvas.style.width = W + "px";
+    canvas.style.height = H + "px";
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    seed();
+  }
+
+  function rnd(a, b){ return a + Math.random() * (b - a); }
+
+  function seed(){
+    var rainCount = Math.min(220, Math.floor(W / 7));
+    drops = [];
+    for (var i = 0; i < rainCount; i++){
+      drops.push({x:rnd(-100, W), y:rnd(-H, H), l:rnd(9, 26), v:rnd(9, 17), o:rnd(.08, .3)});
+    }
+    embers = [];
+    var emberCount = Math.min(40, Math.floor(W / 40));
+    for (var j = 0; j < emberCount; j++){
+      embers.push({x:rnd(0, W), y:rnd(0, H), r:rnd(.7, 2.1), v:rnd(.15, .6), d:rnd(0, Math.PI * 2), o:rnd(.15, .5)});
+    }
+    motes = [];
+    for (var k = 0; k < 3; k++){
+      motes.push({x:rnd(-W, W), y:rnd(H * .3, H), w:rnd(W * .5, W), h:rnd(H * .2, H * .4), s:rnd(.04, .12), o:rnd(.02, .05)});
+    }
+  }
+
+  var last = performance.now();
+  function frame(now){
+    var dt = Math.min(50, now - last) / 16.67;
+    last = now;
+    ctx.clearRect(0, 0, W, H);
+
+    // fog bands
+    for (var m = 0; m < motes.length; m++){
+      var mo = motes[m];
+      mo.x += mo.s * dt;
+      if (mo.x > W) mo.x = -mo.w;
+      var g = ctx.createLinearGradient(mo.x, mo.y, mo.x + mo.w, mo.y);
+      g.addColorStop(0, "rgba(180,190,195,0)");
+      g.addColorStop(.5, "rgba(180,190,195," + mo.o + ")");
+      g.addColorStop(1, "rgba(180,190,195,0)");
+      ctx.fillStyle = g;
+      ctx.beginPath();
+      ctx.ellipse(mo.x + mo.w / 2, mo.y + mo.h / 2, mo.w / 2, mo.h / 2, 0, 0, Math.PI * 2);
+      ctx.fill();
+    }
+
+    // rain
+    ctx.lineWidth = 1;
+    for (var i = 0; i < drops.length; i++){
+      var d = drops[i];
+      d.x -= 1.6 * dt;
+      d.y += d.v * dt;
+      if (d.y > H + 30 || d.x < -120){
+        d.y = rnd(-60, -10);
+        d.x = rnd(-60, W + 40);
+      }
+      ctx.strokeStyle = "rgba(205,215,220," + d.o + ")";
+      ctx.beginPath();
+      ctx.moveTo(d.x, d.y);
+      ctx.lineTo(d.x - 1.4, d.y + d.l);
+      ctx.stroke();
+    }
+
+    // embers
+    for (var e2 = 0; e2 < embers.length; e2++){
+      var em = embers[e2];
+      em.d += .01 * dt;
+      em.x += Math.sin(em.d) * .5 * dt;
+      em.y -= em.v * dt;
+      if (em.y < -10){ em.y = H + 10; em.x = rnd(0, W); }
+      ctx.beginPath();
+      ctx.arc(em.x, em.y, em.r, 0, Math.PI * 2);
+      ctx.fillStyle = "rgba(232,120,70," + em.o + ")";
+      ctx.fill();
+    }
+
+    requestAnimationFrame(frame);
+  }
+
+  window.addEventListener("resize", resize);
+  resize();
+  if (!reduceMotion) requestAnimationFrame(frame);
+  else {
+    // still paint one static frame of rain for texture
+    ctx.clearRect(0, 0, W, H);
+    for (var i2 = 0; i2 < drops.length; i2++){
+      var d2 = drops[i2];
+      ctx.strokeStyle = "rgba(205,215,220," + d2.o + ")";
+      ctx.beginPath();
+      ctx.moveTo(d2.x, d2.y);
+      ctx.lineTo(d2.x - 1.4, d2.y + d2.l);
+      ctx.stroke();
+    }
+  }
+})();
+</script>
+</body>
+</html>
 Hey it's a web file 
 This will be a document of why we love zombies.
 I hate this change.
